@@ -4,6 +4,7 @@ use std::{env, process};
 mod certificate;
 mod config;
 mod relay;
+mod http;
 mod socks5;
 
 fn main() {
