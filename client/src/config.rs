@@ -368,6 +368,8 @@ impl RawConfig {
             "LOG_LEVEL",
         );
 
+        #[cfg(unix)]
+        opts.optflag("d", "daemon", "Daemonize");
         opts.optflag("v", "version", "Print the version");
         opts.optflag("h", "help", "Print this help menu");
 
@@ -383,6 +385,11 @@ impl RawConfig {
 
         if !matches.free.is_empty() {
             return Err(ConfigError::UnexpectedArguments(matches.free.join(", ")));
+        }
+
+        #[cfg(unix)]
+        if matches.opt_present("daemon") {
+            realm_syscall::daemonize("tuic is running in the background.");
         }
 
         let server = matches.opt_str("server");
