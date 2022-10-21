@@ -254,6 +254,10 @@ impl RawConfig {
 
         #[cfg(unix)]
         if matches.opt_present("daemon") {
+            let _ = realm_syscall::bump_nofile_limit();
+            if let Ok((soft, hard)) = realm_syscall::get_nofile_limit() {
+                println!("fd limit: {soft}, {hard}")
+            }
             realm_syscall::daemonize("tuic is running in the background.");
         }
 
