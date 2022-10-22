@@ -13,7 +13,7 @@ use std::{
 };
 use thiserror::Error;
 use tokio::{
-    io::{self, AsyncRead, AsyncWrite, ReadBuf},
+    io::{AsyncRead, AsyncWrite, ReadBuf},
     net::{self, TcpStream},
 };
 use tuic_protocol::{Address, Command};
@@ -43,7 +43,7 @@ pub async fn connect(
         let resp = Command::new_response(true);
         resp.write_to(&mut send).await?;
         let mut tunnel = BiStream(send, recv);
-        io::copy_bidirectional(&mut target, &mut tunnel).await?;
+        realm_io::bidi_copy(&mut target, &mut tunnel).await?;
     } else {
         let resp = Command::new_response(false);
         resp.write_to(&mut send).await?;

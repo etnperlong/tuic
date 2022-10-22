@@ -55,7 +55,7 @@ pub async fn handle(stream: &mut TcpStream, req_tx: Sender<ProxyRequest>) -> Res
 
     let mut quic_stream = rx.await.map_err(map_io_err)?;
     quic_stream.write_all(&buf[..m]).await?;
-    tokio::io::copy_bidirectional(stream, &mut quic_stream).await?;
+    realm_io::bidi_copy(stream, &mut quic_stream).await?;
 
     Ok(())
 }
@@ -79,9 +79,7 @@ async fn handle_connect(
         .write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n")
         .await?;
 
-    tokio::io::copy_bidirectional(stream, &mut quic_stream)
-        .await
-        .map(|_| ())
+    realm_io::bidi_copy(stream, &mut quic_stream).await
 }
 
 fn rm_proxy_hdrs(headers: &mut HeaderMap) {
