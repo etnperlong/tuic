@@ -17,6 +17,7 @@ use tokio::{
     net::{self, TcpStream},
 };
 use tuic_protocol::{Address, Command};
+use super::socks5_out;
 
 pub async fn connect(
     mut send: SendStream,
@@ -25,19 +26,23 @@ pub async fn connect(
 ) -> Result<(), TaskError> {
     let mut target = None;
 
-    let addrs = match addr {
-        Address::SocketAddress(addr) => Ok(vec![addr]),
-        Address::DomainAddress(domain, port) => net::lookup_host((domain.as_str(), port))
-            .await
-            .map(|res| res.collect()),
-    }?;
-
-    for addr in addrs {
-        if let Ok(target_stream) = TcpStream::connect(addr).await {
-            let _ = target_stream.set_nodelay(true);
-            target = Some(target_stream);
-            break;
+    if !socks5_out::is_inited() {
+        let addrs = match addr {
+            Address::SocketAddress(addr) => Ok(vec![addr]),
+            Address::DomainAddress(domain, port) => net::lookup_host((domain.as_str(), port))
+                .await
+                .map(|res| res.collect()),
+        }?;
+    
+        for addr in addrs {
+            if let Ok(target_stream) = TcpStream::connect(addr).await {
+                let _ = target_stream.set_nodelay(true);
+                target = Some(target_stream);
+                break;
+            }
         }
+    } else {
+        target = socks5_out::connect(addr).await.ok();
     }
 
     if let Some(mut target) = target {
