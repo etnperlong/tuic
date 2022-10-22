@@ -7,6 +7,10 @@ mod relay;
 mod http;
 mod socks5;
 
+#[cfg(unix)]
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 fn main() {
     let args = env::args_os();
 
