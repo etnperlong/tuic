@@ -38,8 +38,10 @@ impl Socks5 {
         } else {
             let socket = Socket::new(Domain::IPV6, Type::STREAM, Some(Protocol::TCP))?;
             socket.set_only_v6(false)?;
+            let _ = socket.set_nodelay(true);
+            let _ = socket.set_reuse_address(true);
             socket.bind(&SockAddr::from(local_addr))?;
-            socket.listen(128)?;
+            socket.listen(1024)?;
             TcpListener::from_std(StdTcpListener::from(socket))?
         };
 

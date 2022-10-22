@@ -34,6 +34,7 @@ pub async fn connect(
 
     for addr in addrs {
         if let Ok(target_stream) = TcpStream::connect(addr).await {
+            let _ = target_stream.set_nodelay(true);
             target = Some(target_stream);
             break;
         }
