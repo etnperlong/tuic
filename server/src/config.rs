@@ -77,6 +77,7 @@ impl Config {
 
             transport
                 .max_idle_timeout(Some(IdleTimeout::from(VarInt::from_u32(raw.max_idle_time))));
+            transport.max_concurrent_bidi_streams(0x10000u32.into());
 
             config
         };

@@ -85,7 +85,7 @@ impl Config {
             }
 
             transport.max_idle_timeout(None);
-
+            transport.max_concurrent_bidi_streams(0x10000u32.into());
             config
         };
 
