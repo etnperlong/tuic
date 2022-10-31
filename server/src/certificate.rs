@@ -37,3 +37,17 @@ pub fn load_private_key(path: &str) -> Result<PrivateKey, IoError> {
         .unwrap_or_else(|| fs::read(path))
         .map(PrivateKey)
 }
+
+pub fn generate_self_signed(server_name: &str) -> (Vec<Certificate>, PrivateKey) {
+    let self_signed = rcgen::generate_simple_self_signed(vec![server_name.to_string()])
+        .expect("failed to generate self signed certificate and private key");
+
+    let key = PrivateKey(self_signed.serialize_private_key_der());
+
+    let cert = self_signed
+        .serialize_der()
+        .map(Certificate)
+        .expect("failed to serialize self signed certificate");
+
+    (vec![cert], key)
+}

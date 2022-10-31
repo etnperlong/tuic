@@ -42,12 +42,18 @@ impl Config {
 
         let server_config = {
             let cert_path = raw.certificate.unwrap();
-            let certs = certificate::load_certificates(&cert_path)
-                .map_err(|err| ConfigError::Io(cert_path, err))?;
-
             let priv_key_path = raw.private_key.unwrap();
-            let priv_key = certificate::load_private_key(&priv_key_path)
+
+            let (certs, priv_key) = if cert_path != priv_key_path {
+                let certs = certificate::load_certificates(&cert_path)
+                .map_err(|err| ConfigError::Io(cert_path, err))?;
+                let priv_key = certificate::load_private_key(&priv_key_path)
                 .map_err(|err| ConfigError::Io(priv_key_path, err))?;
+                (certs, priv_key)
+            } else {
+                eprintln!("use self signed certificate {}", &cert_path);
+                certificate::generate_self_signed(&cert_path)
+            };
 
             let mut crypto = RustlsServerConfig::builder()
                 .with_safe_default_cipher_suites()
@@ -182,14 +188,14 @@ impl RawConfig {
         opts.optopt(
             "",
             "certificate",
-            "Set the X.509 certificate. This must be an end-entity certificate",
+            "Set the X.509 certificate. This must be an end-entity certificate. Generate if cert==key, as servername",
             "CERTIFICATE",
         );
 
         opts.optopt(
             "",
             "private-key",
-            "Set the certificate private key",
+            "Set the certificate private key. Generate if cert==key, as servername",
             "PRIVATE_KEY",
         );
 
