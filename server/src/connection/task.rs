@@ -1,3 +1,4 @@
+use super::socks5_out;
 use super::udp::UdpSessionMap;
 use bytes::{Bytes, BytesMut};
 use quinn::{
@@ -17,7 +18,6 @@ use tokio::{
     net::{self, TcpStream},
 };
 use tuic_protocol::{Address, Command};
-use super::socks5_out;
 
 pub async fn connect(
     mut send: SendStream,
@@ -34,7 +34,7 @@ pub async fn connect(
                 .await
                 .map(|res| res.collect()),
         }?;
-    
+
         for addr in addrs {
             if let Ok(target_stream) = TcpStream::connect(addr).await {
                 let _ = target_stream.set_nodelay(true);

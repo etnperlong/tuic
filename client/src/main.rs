@@ -3,8 +3,8 @@ use std::{env, process};
 
 mod certificate;
 mod config;
-mod relay;
 mod http;
+mod relay;
 mod socks5;
 
 #[cfg(unix)]

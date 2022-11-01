@@ -1,5 +1,5 @@
 use self::{connection::ConnectionConfig, stream::IncomingUniStreams};
-use quinn::{ClientConfig, Datagrams};
+use quinn::{ClientConfig, Connection as Datagrams};
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
     future::Future,

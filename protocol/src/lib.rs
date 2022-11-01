@@ -170,7 +170,11 @@ impl Command {
                 buf.put_slice(digest);
             }
             Self::Connect { addr, fast } => {
-                buf.put_u8(if *fast {Self::TYPE_FAST_CONNECT} else {Self::TYPE_CONNECT});
+                buf.put_u8(if *fast {
+                    Self::TYPE_FAST_CONNECT
+                } else {
+                    Self::TYPE_CONNECT
+                });
                 addr.write_to_buf(buf);
             }
             Self::Packet {

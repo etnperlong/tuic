@@ -93,7 +93,7 @@ impl Connection {
             match cmd {
                 Command::Connect { addr, fast } => {
                     let dst_addr = addr.to_string();
-                    let method = if fast {"connect2"} else {"connect"};
+                    let method = if fast { "connect2" } else { "connect" };
                     log::info!("[{rmt_addr}] [{method}] [{dst_addr}]");
 
                     let res = task::connect(send, recv, addr, fast).await;

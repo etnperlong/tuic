@@ -1,3 +1,4 @@
+use super::connection::socks5_out;
 use crate::certificate;
 use getopts::{Fail, Options};
 use log::{LevelFilter, ParseLevelError};
@@ -21,7 +22,6 @@ use std::{
     time::Duration,
 };
 use thiserror::Error;
-use super::connection::socks5_out;
 
 pub struct Config {
     pub server_config: ServerConfig,
@@ -46,9 +46,9 @@ impl Config {
 
             let (certs, priv_key) = if cert_path != priv_key_path {
                 let certs = certificate::load_certificates(&cert_path)
-                .map_err(|err| ConfigError::Io(cert_path, err))?;
+                    .map_err(|err| ConfigError::Io(cert_path, err))?;
                 let priv_key = certificate::load_private_key(&priv_key_path)
-                .map_err(|err| ConfigError::Io(priv_key_path, err))?;
+                    .map_err(|err| ConfigError::Io(priv_key_path, err))?;
                 (certs, priv_key)
             } else {
                 eprintln!("use self signed certificate {}", &cert_path);
@@ -210,7 +210,7 @@ impl RawConfig {
             "",
             "socks5",
             "Set socks5 outbound address. E.g.: 127.0.0.1:1080",
-            "SOCKS5"
+            "SOCKS5",
         );
 
         opts.optopt(

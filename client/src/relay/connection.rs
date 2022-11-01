@@ -6,7 +6,7 @@ use super::{
 };
 use bytes::Bytes;
 use parking_lot::Mutex;
-use quinn::{ClientConfig, Connection as QuinnConnection, Datagrams, Endpoint, NewConnection};
+use quinn::{ClientConfig, Connection as QuinnConnection, Connection as Datagrams, Endpoint};
 use std::{
     collections::HashMap,
     future::Future,
@@ -146,12 +146,7 @@ impl Connection {
             .connect_with(config.quinn_config.clone(), addr, name)
             .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
-        let NewConnection {
-            connection,
-            datagrams,
-            uni_streams,
-            ..
-        } = if config.reduce_rtt {
+        let connection = if config.reduce_rtt {
             match conn.into_0rtt() {
                 Ok((conn, _)) => conn,
                 Err(conn) => {
@@ -163,10 +158,11 @@ impl Connection {
             conn.await?
         };
 
-        let conn = Self::new(connection, config).await;
-        let uni_streams = IncomingUniStreams::new(uni_streams, conn.stream_reg.get_registry());
+        let conn = Self::new(connection.clone(), config).await;
+        let uni_streams =
+            IncomingUniStreams::new(connection.clone(), conn.stream_reg.get_registry());
 
-        Ok((conn, datagrams, uni_streams))
+        Ok((conn, connection, uni_streams))
     }
 
     async fn new(conn: QuinnConnection, config: &ConnectionConfig) -> Self {

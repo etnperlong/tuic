@@ -8,9 +8,9 @@ use http::header::{HeaderMap, HeaderName, HeaderValue};
 use http::request::{Parts, Request};
 use http::{Method, Version};
 
-use crate::FAST;
 use crate::relay::Address as ProxyAddress;
 use crate::relay::Request as ProxyRequest;
+use crate::FAST;
 
 pub async fn handle(stream: &mut TcpStream, req_tx: Sender<ProxyRequest>) -> Result<()> {
     let mut buf = vec![0u8; 0x2000];
@@ -51,7 +51,7 @@ pub async fn handle(stream: &mut TcpStream, req_tx: Sender<ProxyRequest>) -> Res
         &addr
     );
 
-    let (req, rx) = ProxyRequest::new_connect(addr, unsafe{FAST});
+    let (req, rx) = ProxyRequest::new_connect(addr, unsafe { FAST });
     let _ = req_tx.send(req).await;
 
     let mut quic_stream = rx.await.map_err(map_io_err)?;
@@ -72,7 +72,7 @@ async fn handle_connect(
         &addr
     );
 
-    let (req, rx) = ProxyRequest::new_connect(addr, unsafe{FAST});
+    let (req, rx) = ProxyRequest::new_connect(addr, unsafe { FAST });
     let _ = req_tx.send(req).await;
 
     let mut quic_stream = rx.await.map_err(map_io_err)?;

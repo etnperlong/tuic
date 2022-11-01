@@ -6,7 +6,7 @@ use getopts::{Fail, Options};
 use log::{LevelFilter, ParseLevelError};
 use quinn::{
     congestion::{BbrConfig, CubicConfig, NewRenoConfig},
-    ClientConfig,
+    ClientConfig, TransportConfig,
 };
 use rustls::{version::TLS13, ClientConfig as RustlsClientConfig};
 use serde::{de::Error as DeError, Deserialize, Deserializer};
@@ -52,18 +52,18 @@ impl Config {
             let mut crypto = if raw.relay.insecure {
                 eprintln!("warning: insecure enabled");
                 RustlsClientConfig::builder()
-                .with_safe_defaults()
-                .with_custom_certificate_verifier(Arc::new(certificate::SkipVerify))
-                .with_no_client_auth()
+                    .with_safe_defaults()
+                    .with_custom_certificate_verifier(Arc::new(certificate::SkipVerify))
+                    .with_no_client_auth()
             } else {
                 let certs = certificate::load_certificates(raw.relay.certificates)?;
                 RustlsClientConfig::builder()
-                .with_safe_default_cipher_suites()
-                .with_safe_default_kx_groups()
-                .with_protocol_versions(&[&TLS13])
-                .unwrap()
-                .with_root_certificates(certs)
-                .with_no_client_auth()
+                    .with_safe_default_cipher_suites()
+                    .with_safe_default_kx_groups()
+                    .with_protocol_versions(&[&TLS13])
+                    .unwrap()
+                    .with_root_certificates(certs)
+                    .with_no_client_auth()
             };
 
             crypto.alpn_protocols = raw
@@ -76,8 +76,7 @@ impl Config {
             crypto.enable_early_data = true;
             crypto.enable_sni = !raw.relay.disable_sni;
 
-            let mut config = ClientConfig::new(Arc::new(crypto));
-            let transport = Arc::get_mut(&mut config.transport).unwrap();
+            let mut transport = TransportConfig::default();
 
             match raw.relay.congestion_controller {
                 CongestionController::Bbr => {
@@ -93,6 +92,9 @@ impl Config {
 
             transport.max_idle_timeout(None);
             transport.max_concurrent_bidi_streams(0x10000u32.into());
+
+            let mut config = ClientConfig::new(Arc::new(crypto));
+            config.transport_config(transport.into());
             config
         };
 
@@ -300,11 +302,7 @@ impl RawConfig {
             "CERTIFICATE",
         );
 
-        opts.optflag(
-            "",
-            "insecure",
-            "Skip certificate verification",
-        );
+        opts.optflag("", "insecure", "Skip certificate verification");
 
         opts.optopt(
             "",

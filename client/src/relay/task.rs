@@ -6,7 +6,11 @@ use tuic_protocol::{Address as TuicAddress, Command as TuicCommand};
 
 impl Connection {
     pub async fn handle_connect(self, addr: Address, tx: OneshotSender<BiStream>, fast: bool) {
-        async fn negotiate_connect(conn: Connection, addr: Address, fast: bool) -> Result<Option<BiStream>> {
+        async fn negotiate_connect(
+            conn: Connection,
+            addr: Address,
+            fast: bool,
+        ) -> Result<Option<BiStream>> {
             let cmd = TuicCommand::new_connect(TuicAddress::from(addr), fast);
 
             let mut stream = conn.get_bi_stream().await?;
@@ -20,7 +24,7 @@ impl Connection {
                         return Err(err);
                     }
                 };
-    
+
                 if let TuicCommand::Response(true) = resp {
                     Ok(Some(stream))
                 } else {
@@ -33,7 +37,7 @@ impl Connection {
         }
 
         let display_addr = format!("{addr}");
-        let method = if fast {"connect2"} else {"connect"};
+        let method = if fast { "connect2" } else { "connect" };
 
         match negotiate_connect(self, addr, fast).await {
             Ok(Some(stream)) => {

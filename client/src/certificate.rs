@@ -35,7 +35,7 @@ pub fn load_certificates(files: Vec<String>) -> Result<RootCertStore, ConfigErro
     Ok(certs)
 }
 
-use rustls::client::{ServerCertVerifier, ServerCertVerified};
+use rustls::client::{ServerCertVerified, ServerCertVerifier};
 pub struct SkipVerify;
 impl ServerCertVerifier for SkipVerify {
     fn verify_server_cert(
@@ -46,8 +46,7 @@ impl ServerCertVerifier for SkipVerify {
         _scts: &mut dyn Iterator<Item = &[u8]>,
         _ocsp_response: &[u8],
         _now: std::time::SystemTime,
-    ) -> std::result::Result<rustls::client::ServerCertVerified, rustls::Error>
-    {
+    ) -> std::result::Result<rustls::client::ServerCertVerified, rustls::Error> {
         Ok(ServerCertVerified::assertion())
     }
 }

@@ -4,7 +4,7 @@ use super::{
 };
 use bytes::Bytes;
 use futures_util::StreamExt;
-use quinn::{ConnectionError, Datagrams};
+use quinn::{Connection as Datagrams, ConnectionError};
 use std::{
     io::{Error, ErrorKind, Result},
     result::Result as StdResult,
@@ -40,11 +40,10 @@ pub async fn listen_incoming(
         };
 
         let err = match incoming {
-            UdpRelayMode::Native(mut incoming) => loop {
-                let pkt = match incoming.next().await {
-                    Some(Ok(pkt)) => pkt,
-                    Some(Err(err)) => break err,
-                    None => break ConnectionError::LocallyClosed,
+            UdpRelayMode::Native(incoming) => loop {
+                let pkt = match incoming.read_datagram().await {
+                    Ok(pkt) => pkt,
+                    Err(err) => break err,
                 };
 
                 // process datagram

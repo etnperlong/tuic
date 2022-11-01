@@ -1,19 +1,19 @@
-use std::io::{Error, Result, ErrorKind};
+use std::io::{Error, ErrorKind, Result};
 use std::net::SocketAddr;
-use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 use tuic_protocol::Address;
 
 mod config {
     use super::*;
-    use std::sync::Once;
     use std::mem::MaybeUninit;
+    use std::sync::Once;
 
     static INIT: Once = Once::new();
-    static mut DEST: MaybeUninit<SocketAddr> =  MaybeUninit::uninit();
+    static mut DEST: MaybeUninit<SocketAddr> = MaybeUninit::uninit();
 
     pub fn set_server(addr: SocketAddr) {
-        INIT.call_once(||{
+        INIT.call_once(|| {
             unsafe { DEST.write(addr) };
         });
     }
@@ -51,10 +51,10 @@ mod proto {
     pub fn write_request(addr: &Address, mut buf: &mut [u8]) -> usize {
         let total = buf.len();
         buf.put_slice(CONNECT_REQ);
-        
+
         let ptr = buf.as_mut_ptr();
         addr.write_to_buf(&mut buf);
-        unsafe{ *ptr = cvt(addr) };
+        unsafe { *ptr = cvt(addr) };
         total - buf.len()
     }
 
@@ -82,7 +82,7 @@ pub async fn connect(addr: Address) -> Result<TcpStream> {
     log::debug!("[connect-socks5] start handshake");
     // --->
     stream.write_all(proto::NOAUTH_REQ).await?;
-    
+
     // <---
     stream.read_exact(&mut buf[..2]).await?;
     proto::check_noauth(&buf[..2])?;

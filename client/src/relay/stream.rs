@@ -1,6 +1,6 @@
-use futures_util::Stream;
+use futures_util::{Future, Stream};
 use quinn::{
-    ConnectionError, IncomingUniStreams as QuinnIncomingUniStreams, RecvStream as QuinnRecvStream,
+    Connection as QuinnConnection, ConnectionError, RecvStream as QuinnRecvStream,
     SendStream as QuinnSendStream,
 };
 use std::{
@@ -151,13 +151,13 @@ impl AsyncWrite for BiStream {
 }
 
 pub struct IncomingUniStreams {
-    incoming: QuinnIncomingUniStreams,
+    incoming: QuinnConnection,
     reg: Registry,
 }
 
 impl IncomingUniStreams {
     #[inline]
-    pub fn new(incoming: QuinnIncomingUniStreams, reg: Registry) -> Self {
+    pub fn new(incoming: QuinnConnection, reg: Registry) -> Self {
         Self { incoming, reg }
     }
 }
@@ -166,11 +166,15 @@ impl Stream for IncomingUniStreams {
     type Item = StdResult<RecvStream, ConnectionError>;
 
     #[inline]
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         if let Some(reg) = self.reg.get_register() {
-            Pin::new(&mut self.incoming)
-                .poll_next(cx)
-                .map_ok(|recv| RecvStream::new(recv, reg))
+            let mut fut = self.incoming.accept_uni();
+            match unsafe { Pin::new_unchecked(&mut fut) }.poll(cx) {
+                Poll::Ready(Ok(recv)) => Poll::Ready(Some(Ok(RecvStream::new(recv, reg)))),
+                Poll::Ready(Err(ConnectionError::LocallyClosed)) => Poll::Ready(None),
+                Poll::Ready(Err(e)) => Poll::Ready(Some(Err(e))),
+                Poll::Pending => Poll::Pending,
+            }
         } else {
             // the connection is already dropped
             Poll::Ready(None)

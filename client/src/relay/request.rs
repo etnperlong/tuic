@@ -50,7 +50,9 @@ async fn process_request(
         drop(lock);
 
         match req {
-            Request::Connect { addr, tx, fast } => conn.clone().handle_connect(addr, tx, fast).await,
+            Request::Connect { addr, tx, fast } => {
+                conn.clone().handle_connect(addr, tx, fast).await
+            }
             Request::Associate {
                 assoc_id,
                 mut pkt_send_rx,
@@ -122,7 +124,11 @@ impl Request {
 impl Display for Request {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
-            Request::Connect { addr, fast, .. } => write!(f, "[{}] [{addr}]", if *fast {"connect2"} else {"connect"}),
+            Request::Connect { addr, fast, .. } => write!(
+                f,
+                "[{}] [{addr}]",
+                if *fast { "connect2" } else { "connect" }
+            ),
             Request::Associate { assoc_id, .. } => write!(f, "[associate] [{assoc_id}]"),
         }
     }

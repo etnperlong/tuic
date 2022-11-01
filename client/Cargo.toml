@@ -22,7 +22,7 @@ getopts = "0.2.*"
 log = { version = "0.4.*", features = ["serde", "std"] }
 once_cell = "1.13.*"
 parking_lot = "0.12.*"
-quinn = "0.8.*"
+quinn = "0.9"
 rand = "0.8.*"
 rustls = { version = "0.20.*", features = ["quic", "dangerous_configuration"], default-features = false }
 rustls-native-certs = "0.6.*"

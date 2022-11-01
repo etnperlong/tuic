@@ -3,12 +3,9 @@ use self::{
     dispatch::DispatchError,
     udp::{RecvPacketReceiver, UdpPacketFrom, UdpPacketSource, UdpSessionMap},
 };
-use futures_util::StreamExt;
+
 use parking_lot::Mutex;
-use quinn::{
-    Connecting, Connection as QuinnConnection, ConnectionError, Datagrams, IncomingBiStreams,
-    IncomingUniStreams, NewConnection,
-};
+use quinn::{Connecting, Connection as QuinnConnection, ConnectionError};
 use std::{
     collections::HashSet,
     future::Future,
@@ -22,9 +19,9 @@ use std::{
 };
 use tokio::time;
 
-pub mod socks5_out;
 mod authenticate;
 mod dispatch;
+pub mod socks5_out;
 mod task;
 mod udp;
 
@@ -47,13 +44,7 @@ impl Connection {
         let rmt_addr = conn.remote_address();
 
         match conn.await {
-            Ok(NewConnection {
-                connection,
-                uni_streams,
-                bi_streams,
-                datagrams,
-                ..
-            }) => {
+            Ok(connection) => {
                 log::debug!("[{rmt_addr}] [establish]");
 
                 let (udp_sessions, recv_pkt_rx) = UdpSessionMap::new(max_pkt_size);
@@ -69,9 +60,9 @@ impl Connection {
                 };
 
                 let res = tokio::select! {
-                    res = Self::listen_uni_streams(conn.clone(), uni_streams) => res,
-                    res = Self::listen_bi_streams(conn.clone(), bi_streams) => res,
-                    res = Self::listen_datagrams(conn.clone(), datagrams) => res,
+                    res = Self::listen_uni_streams(conn.clone()) => res,
+                    res = Self::listen_bi_streams(conn.clone()) => res,
+                    res = Self::listen_datagrams(conn.clone()) => res,
                     res = Self::listen_received_udp_packet(conn.clone(), recv_pkt_rx) => res,
                     Err(err) = Self::handle_authentication_timeout(conn, auth_timeout) => Err(err),
                 };
@@ -97,12 +88,8 @@ impl Connection {
         }
     }
 
-    async fn listen_uni_streams(
-        self,
-        mut uni_streams: IncomingUniStreams,
-    ) -> Result<(), ConnectionError> {
-        while let Some(stream) = uni_streams.next().await {
-            let stream = stream?;
+    async fn listen_uni_streams(self) -> Result<(), ConnectionError> {
+        while let Ok(stream) = self.controller.accept_uni().await {
             let conn = self.clone();
 
             tokio::spawn(async move {
@@ -122,12 +109,8 @@ impl Connection {
         Err(ConnectionError::LocallyClosed)
     }
 
-    async fn listen_bi_streams(
-        self,
-        mut bi_streams: IncomingBiStreams,
-    ) -> Result<(), ConnectionError> {
-        while let Some(stream) = bi_streams.next().await {
-            let (send, recv) = stream?;
+    async fn listen_bi_streams(self) -> Result<(), ConnectionError> {
+        while let Ok((send, recv)) = self.controller.accept_bi().await {
             let conn = self.clone();
 
             tokio::spawn(async move {
@@ -147,9 +130,8 @@ impl Connection {
         Err(ConnectionError::LocallyClosed)
     }
 
-    async fn listen_datagrams(self, mut datagrams: Datagrams) -> Result<(), ConnectionError> {
-        while let Some(datagram) = datagrams.next().await {
-            let datagram = datagram?;
+    async fn listen_datagrams(self) -> Result<(), ConnectionError> {
+        while let Ok(datagram) = self.controller.read_datagram().await {
             let conn = self.clone();
 
             tokio::spawn(async move {
