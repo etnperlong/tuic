@@ -409,12 +409,16 @@ impl RawConfig {
             return Err(ConfigError::UnexpectedArguments(matches.free.join(", ")));
         }
 
-        #[cfg(unix)]
-        if matches.opt_present("daemon") {
+        #[cfg(all(unix, not(target_os = "android")))]
+        {
             let _ = realm_syscall::bump_nofile_limit();
             if let Ok((soft, hard)) = realm_syscall::get_nofile_limit() {
                 println!("fd limit: {soft}, {hard}")
             }
+        }
+        
+        #[cfg(unix)]
+        if matches.opt_present("daemon") {
             realm_syscall::daemonize("tuic is running in the background.");
         }
 
