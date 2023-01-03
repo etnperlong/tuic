@@ -6,7 +6,7 @@ use super::{
 };
 use bytes::Bytes;
 use parking_lot::Mutex;
-use quinn::{ClientConfig, Connection as QuinnConnection, Connection as Datagrams, Endpoint};
+use quinn::{ClientConfig, Connection as QuinnConnection, Connection as Datagrams, Endpoint, EndpointConfig, TokioRuntime};
 use std::{
     collections::HashMap,
     future::Future,
@@ -27,6 +27,24 @@ use tokio::{
     time,
 };
 use tuic_protocol::Command;
+use std::os::fd::AsRawFd;
+use std::os::unix::net::UnixStream;
+use passfd::FdPassingExt;
+
+fn my_client(addr: SocketAddr) -> Result<Endpoint> {
+    let socket = std::net::UdpSocket::bind(addr)?;
+    //
+    let unix = UnixStream::connect("protect_path")?;
+    unix.send_fd(socket.as_raw_fd())?;
+    unix.shutdown(std::net::Shutdown::Both)?;
+    //
+    Endpoint::new(
+        EndpointConfig::default(),
+        None,
+        socket,
+        TokioRuntime,
+    )
+}
 
 pub async fn manage_connection(
     config: ConnectionConfig,
@@ -142,7 +160,7 @@ impl Connection {
             SocketAddr::V6(_) => SocketAddr::from((Ipv6Addr::UNSPECIFIED, 0)),
         };
 
-        let conn = Endpoint::client(bind_addr)?
+        let conn = my_client(bind_addr)?
             .connect_with(config.quinn_config.clone(), addr, name)
             .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
