@@ -12,7 +12,7 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/EAimTY/tuic"
 
 [dependencies]
-tuic-protocol = { path="../protocol" }
+tuic-protocol = { path = "../protocol" }
 
 blake3 = "1.3.*"
 bytes = "1.2.*"
@@ -40,8 +40,10 @@ http = "0.2"
 httparse = "1"
 
 realm_io = { version = "0.3.5", features = ["brutal-shutdown"] }
+
 [target."cfg(unix)".dependencies]
 realm_syscall = "0.1"
 jemallocator = "0.5"
 
+[target.'cfg(target_os="android")'.dependencies]
 passfd = "0.1.5"

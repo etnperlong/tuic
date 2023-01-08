@@ -27,16 +27,18 @@ use tokio::{
     time,
 };
 use tuic_protocol::Command;
-use std::os::fd::AsRawFd;
-use std::os::unix::net::UnixStream;
-use passfd::FdPassingExt;
 
 fn my_client(addr: SocketAddr) -> Result<Endpoint> {
     let socket = std::net::UdpSocket::bind(addr)?;
     //
-    let unix = UnixStream::connect("protect_path")?;
-    unix.send_fd(socket.as_raw_fd())?;
-    unix.shutdown(std::net::Shutdown::Both)?;
+    #[cfg(target_os = "android")]
+    {
+        use std::os::fd::AsRawFd;
+        use passfd::FdPassingExt;
+        let unix = std::os::unix::net::UnixStream::connect("protect_path")?;
+        unix.send_fd(socket.as_raw_fd())?;
+        unix.shutdown(std::net::Shutdown::Both)?;
+    }
     //
     Endpoint::new(
         EndpointConfig::default(),

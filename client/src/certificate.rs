@@ -6,7 +6,20 @@ use std::{
     io::BufReader,
 };
 
-pub fn load_certificates(files: Vec<String>) -> Result<RootCertStore, ConfigError> {
+#[allow(unused_mut)]
+pub fn load_certificates(mut files: Vec<String>) -> Result<RootCertStore, ConfigError> {
+    #[cfg(target_os = "android")]
+    {
+        if let Ok(dir) = fs::read_dir("/system/etc/security/cacerts") {
+            let sys_certs = dir.filter_map(|r| r.ok());
+            for cert in sys_certs {
+                if let Some(str) = cert.path().to_str() {
+                    files.push(str.parse().unwrap());
+                }
+            }
+        }
+    }
+
     let mut certs = RootCertStore::empty();
 
     for file in &files {
@@ -36,14 +49,16 @@ pub fn load_certificates(files: Vec<String>) -> Result<RootCertStore, ConfigErro
 }
 
 use rustls::client::{ServerCertVerified, ServerCertVerifier};
+
 pub struct SkipVerify;
+
 impl ServerCertVerifier for SkipVerify {
     fn verify_server_cert(
         &self,
         _end_entity: &rustls::Certificate,
         _intermediates: &[rustls::Certificate],
         _server_name: &rustls::ServerName,
-        _scts: &mut dyn Iterator<Item = &[u8]>,
+        _scts: &mut dyn Iterator<Item=&[u8]>,
         _ocsp_response: &[u8],
         _now: std::time::SystemTime,
     ) -> std::result::Result<rustls::client::ServerCertVerified, rustls::Error> {
