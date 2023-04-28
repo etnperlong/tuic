@@ -1,7 +1,7 @@
 on:
   workflow_dispatch:
 
-name: build-android
+name: build-and-release
 
 jobs:
   build-and-release:
@@ -137,22 +137,19 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk
-
       - name: Build server
         uses: actions-rs/cargo@v1
         with:
           use-cross: ${{ matrix.cross }}
-          command: ndk
-          args: --target ${{ matrix.target }} build --release -p tuic-server
+          command: build
+          args: --release -p tuic-server --target ${{ matrix.target }}
 
       - name: Build client
         uses: actions-rs/cargo@v1
         with:
           use-cross: ${{ matrix.cross }}
-          command: ndk
-          args: --target ${{ matrix.target }} build --release -p tuic-client
+          command: build
+          args: --release -p tuic-client --target ${{ matrix.target }}
 
       - name: Move binaries
         run: |
