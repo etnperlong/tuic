@@ -3,15 +3,15 @@ use crate::{
     server::Server,
 };
 use std::{env, process};
+use mimalloc::MiMalloc;
 
 mod certificate;
 mod config;
 mod connection;
 mod server;
 
-#[cfg(unix)]
 #[global_allocator]
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
     let args = env::args_os();

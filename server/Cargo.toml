@@ -34,6 +34,7 @@ tokio = { version = "1.20.*", features = ["io-util", "macros", "net", "parking_l
 rcgen = "0.10"
 
 realm_io = { version = "0.3", features = ["brutal-shutdown"] }
+mimalloc = "0.1.37"
+
 [target."cfg(unix)".dependencies]
 realm_syscall = "0.1"
-jemallocator = "0.5"

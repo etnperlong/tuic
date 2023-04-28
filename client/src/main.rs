@@ -1,5 +1,6 @@
 use crate::config::{Config, ConfigError};
 use std::{env, process};
+use mimalloc::MiMalloc;
 
 mod certificate;
 mod config;
@@ -7,9 +8,8 @@ mod http;
 mod relay;
 mod socks5;
 
-#[cfg(unix)]
 #[global_allocator]
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+static GLOBAL: MiMalloc = MiMalloc;
 
 static mut FAST: bool = false;
 
